@@ -1,0 +1,1858 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>VU Music Player - Cassete Retrô</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        :root { 
+            --bg-color: #1a1a1a; 
+            --led-off: #2a2a2a;
+            --cassette-brown: #8b7355;
+            --cassette-dark: #5c4a36;
+            --cassette-light: #b89a7a;
+            --screen-bg: #2d4a3e;
+            --speaker-gray: #4a4a4a;
+            --speaker-dark: #2a2a2a;
+        }
+        
+        body { 
+            background-color: #000; 
+            color: #fff; 
+            font-family: 'Share Tech Mono', monospace;
+            height: 100vh; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center;
+            overflow: hidden; 
+            margin: 0;
+            padding: 6px;
+        }
+        
+        #app-container { 
+            width: 100%; 
+            max-width: 380px; 
+            height: 98%; 
+            display: flex; 
+            flex-direction: column; 
+            background: linear-gradient(145deg, #2a2a2a 0%, #1a1a1a 100%);
+            position: relative;
+            border: 2px solid #3a3a3a;
+            box-shadow: inset 0 0 20px rgba(0,0,0,0.8);
+            border-radius: 20px;
+            overflow: hidden;
+        }
+
+        /* Vinil Texture */
+        .vinyl-bg {
+            background: repeating-linear-gradient(
+                45deg,
+                #222 0px,
+                #222 2px,
+                #2a2a2a 2px,
+                #2a2a2a 8px
+            );
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .app-header {
+            padding: 12px 16px;
+            border-bottom: 1px solid #333;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            background: rgba(0,0,0,0.4);
+            min-height: 50px;
+        }
+
+        .app-header h1 {
+            font-size: 22px;
+            font-weight: bold;
+            color: #b89a7a;
+            text-shadow: 0 0 10px #8b7355;
+            letter-spacing: 2px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-right: auto;
+        }
+
+        .app-header h1 span {
+            color: #9bff9b;
+            font-size: 14px;
+            text-shadow: 0 0 8px #9bff9b;
+        }
+
+        .app-header .admin-gear {
+            background: #1a1a1a;
+            border: 1px solid #5a5a5a;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            color: #b89a7a;
+            transition: all 0.2s;
+            margin-right: 8px;
+        }
+
+        .app-header .admin-gear:hover {
+            border-color: #9bff9b;
+            color: #9bff9b;
+            transform: rotate(30deg);
+            box-shadow: 0 0 10px #9bff9b;
+        }
+
+        .app-header .credit {
+            font-size: 11px;
+            color: #b89a7a;
+            background: #1a1a1a;
+            padding: 4px 10px;
+            border-radius: 20px;
+            border: 1px solid #5a5a5a;
+            box-shadow: 0 0 10px rgba(155, 255, 155, 0.2);
+            letter-spacing: 0.5px;
+            font-weight: bold;
+        }
+
+        .app-header .credit a {
+            color: #9bff9b;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        /* Cassette Display */
+        .cassette-display {
+            background: linear-gradient(145deg, #3a3a3a, #1a1a1a);
+            border-radius: 10px;
+            padding: 10px 12px 8px 12px;
+            margin: 6px 12px 4px 12px;
+            border: 2px solid #5a5a5a;
+            box-shadow: 
+                inset 0 -2px 0 #0a0a0a,
+                inset 0 2px 0 #6a6a6a,
+                0 3px 10px rgba(0,0,0,0.5);
+        }
+
+        .tape-window {
+            background: linear-gradient(145deg, #2d4a3e, #1a2f27);
+            border: 2px solid #3a3a3a;
+            border-radius: 6px;
+            padding: 15px 4px 10px 4px;
+            position: relative;
+            box-shadow: inset 0 0 15px #1a2f27;
+            min-height: 90px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .reel {
+            width: 55px;
+            height: 55px;
+            background: #ffffff;
+            border-radius: 50%;
+            border: 2px solid #cccccc;
+            position: relative;
+            box-shadow: 0 0 8px rgba(255,255,255,0.3);
+            transition: transform 0.1s linear;
+            flex-shrink: 0;
+            z-index: 5;
+        }
+
+        .reel-inner {
+            width: 32px;
+            height: 32px;
+            background: #f0f0f0;
+            border-radius: 50%;
+            border: 2px solid #cccccc;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .reel-center {
+            width: 10px;
+            height: 10px;
+            background: #333333;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border: 1px solid #666;
+        }
+
+        .reel-spokes {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+
+        .reel-spokes::before, .reel-spokes::after {
+            content: '';
+            position: absolute;
+            background: #cccccc;
+        }
+
+        .reel-spokes::before {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .reel-spokes::after {
+            height: 100%;
+            width: 2px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .reel.spinning {
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        /* Fita conectando os rolos pelo topo */
+        .tape-path {
+            position: absolute;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 5px;
+            background: #8b7355;
+            border-radius: 3px;
+            box-shadow: 0 0 15px #b89a7a;
+            z-index: 10;
+        }
+
+        .tape-path::before {
+            content: '';
+            position: absolute;
+            left: -12px;
+            top: -10px;
+            width: 20px;
+            height: 24px;
+            background: #8b7355;
+            border-radius: 60% 40% 0 0;
+            transform: rotate(-10deg);
+            box-shadow: -2px -2px 8px #b89a7a;
+        }
+
+        .tape-path::after {
+            content: '';
+            position: absolute;
+            right: -12px;
+            top: -10px;
+            width: 20px;
+            height: 24px;
+            background: #8b7355;
+            border-radius: 40% 60% 0 0;
+            transform: rotate(10deg);
+            box-shadow: 2px -2px 8px #b89a7a;
+        }
+
+        /* Counter */
+        .tape-counter {
+            background: #2d4a3e;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #9bff9b;
+            border: 1px solid #1a2f27;
+            box-shadow: inset 0 0 8px #1a2f27, 0 0 8px #9bff9b33;
+            font-weight: bold;
+        }
+
+        /* Track Info */
+        .track-info {
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 4px;
+            padding: 5px 10px;
+            font-size: 11px;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            color: #b89a7a;
+        }
+
+        .track-info span:last-child {
+            color: #9bff9b;
+            font-weight: bold;
+        }
+
+        /* VU Meter com LEDs (estilo retangular) */
+        .vu-container {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 6px;
+            padding: 15px 12px;
+            margin: 4px 12px 8px 12px;
+            border: 2px solid #3a3a3a;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+        }
+
+        .vu-channel {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+
+        .vu-channel:last-child {
+            margin-bottom: 0;
+        }
+
+        .vu-label {
+            width: 22px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #9bff9b;
+            text-shadow: 0 0 8px #9bff9b;
+        }
+
+        .vu-led-row {
+            flex: 1;
+            display: flex;
+            gap: 2px;
+            height: 28px;
+        }
+
+        .vu-led {
+            flex: 1;
+            background-color: #1a1a1a;
+            border-radius: 2px;
+            transition: background-color 0.05s, box-shadow 0.05s;
+            box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .vu-led.active {
+            background-color: #00ff00;
+            box-shadow: 0 0 8px #00ff00, inset 0 0 2px #ffffff;
+        }
+
+        .vu-led.active.yellow {
+            background-color: #ffff00;
+            box-shadow: 0 0 8px #ffff00, inset 0 0 2px #ffffff;
+        }
+
+        .vu-led.active.red {
+            background-color: #ff3300;
+            box-shadow: 0 0 8px #ff3300, inset 0 0 2px #ffffff;
+        }
+
+        /* Potenciômetro de Volume Analógico */
+        .volume-container {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 8px;
+            padding: 16px 12px;
+            margin: 4px 12px 8px 12px;
+            border: 2px solid #3a3a3a;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.7);
+        }
+
+        .volume-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            color: #b89a7a;
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .volume-label span:first-child {
+            color: #9bff9b;
+        }
+
+        .volume-slider {
+            position: relative;
+            width: 100%;
+            height: 30px;
+            background: #1a1a1a;
+            border-radius: 15px;
+            border: 2px solid #3a3a3a;
+            box-shadow: inset 0 2px 5px rgba(0,0,0,0.5);
+            cursor: pointer;
+        }
+
+        .volume-fill {
+            height: 100%;
+            width: 0%;
+            background: linear-gradient(90deg, #2a4a2a, #8b7355);
+            border-radius: 15px;
+            pointer-events: none;
+            transition: width 0.1s;
+        }
+
+        .volume-knob {
+            position: absolute;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            width: 24px;
+            height: 24px;
+            background: radial-gradient(circle at 30% 30%, #cccccc, #8a8a8a);
+            border-radius: 50%;
+            border: 2px solid #5a5a5a;
+            box-shadow: 0 0 10px #b89a7a, 0 2px 4px rgba(0,0,0,0.5);
+            pointer-events: none;
+            transition: left 0.1s;
+            z-index: 5;
+        }
+
+        .volume-scale {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 8px;
+            padding: 0 5px;
+            color: #6a6a6a;
+            font-size: 10px;
+        }
+
+        .volume-scale span {
+            width: 20px;
+            text-align: center;
+            color: #b89a7a;
+        }
+
+        /* Cassette Buttons - 4 BOTÕES */
+        .cassette-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 6px 12px 8px 12px;
+            padding: 12px 8px;
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border-radius: 8px;
+            border: 2px solid #3a3a3a;
+        }
+
+        .cassette-btn {
+            width: 50px;
+            height: 45px;
+            background: linear-gradient(145deg, #4a4a4a, #2a2a2a);
+            border: 2px solid #5a5a5a;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.05s;
+            box-shadow: 0 3px 0 #1a1a1a, 0 5px 8px rgba(0,0,0,0.3);
+            position: relative;
+            top: 0;
+        }
+
+        .cassette-btn.play::before {
+            content: "▶";
+            font-size: 20px;
+            color: #b89a7a;
+        }
+
+        .cassette-btn.stop::before {
+            content: "";
+            width: 16px;
+            height: 16px;
+            background: #b89a7a;
+            border-radius: 2px;
+            display: block;
+        }
+
+        .cassette-btn.pause {
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .cassette-btn.pause::before,
+        .cassette-btn.pause::after {
+            content: "";
+            width: 5px;
+            height: 16px;
+            background: #b89a7a;
+            border-radius: 1px;
+            display: block;
+        }
+
+        .cassette-btn.eject::before {
+            content: "⏏";
+            font-size: 20px;
+            color: #b89a7a;
+        }
+
+        .cassette-btn.pressed {
+            top: 3px;
+            box-shadow: 0 1px 0 #1a1a1a, 0 5px 8px rgba(0,0,0,0.3);
+        }
+
+        .cassette-btn.play.active::before {
+            color: #e0b68c;
+        }
+
+        .cassette-btn.stop.active::before {
+            background: #ff9b9b;
+        }
+
+        .cassette-btn.pause.active::before,
+        .cassette-btn.pause.active::after {
+            background: #9bffff;
+        }
+
+        .cassette-btn.eject.active::before {
+            color: #9bff9b;
+        }
+
+        /* LED Indicators no rodapé */
+        .led-footer {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin: 0 12px 12px 12px;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 30px;
+            border: 1px solid #3a3a3a;
+        }
+
+        .led-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .led-vintage {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background-color: #330000;
+            box-shadow: 
+                inset 0 0 5px #000,
+                0 0 0 1px #5a3a3a,
+                0 0 10px currentColor;
+            transition: all 0.2s;
+        }
+
+        .led-vintage.red {
+            background-color: #ff0000;
+            box-shadow: 
+                inset 0 0 8px #ffaaaa,
+                0 0 0 1px #ff6666,
+                0 0 15px #ff0000;
+        }
+
+        .led-vintage.green {
+            background-color: #00cc00;
+            box-shadow: 
+                inset 0 0 8px #aaffaa,
+                0 0 0 1px #66ff66,
+                0 0 15px #00cc00;
+        }
+
+        .led-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            color: #888;
+            letter-spacing: 1px;
+        }
+
+        .led-label.active {
+            color: #b89a7a;
+            text-shadow: 0 0 5px currentColor;
+        }
+
+        /* Modal de Fitinhas K7 - MELHORADO */
+        .tape-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+            overflow-y: auto;
+        }
+
+        .tape-modal-content {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border: 3px solid #5a5a5a;
+            border-radius: 20px;
+            padding: 20px 15px;
+            width: 100%;
+            max-width: 350px;
+            box-shadow: 0 0 30px rgba(155, 255, 155, 0.3);
+        }
+
+        .tape-modal-title {
+            color: #b89a7a;
+            font-size: 16px;
+            text-align: center;
+            margin-bottom: 20px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 1px solid #3a3a3a;
+            padding-bottom: 10px;
+        }
+
+        .tapes-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .tape-item {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 15px 8px 10px 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .tape-item:hover {
+            border-color: #9bff9b;
+            transform: scale(1.02);
+            background: rgba(155, 255, 155, 0.1);
+        }
+
+        .tape-item.selected {
+            border-color: #9bff9b;
+            box-shadow: 0 0 15px #9bff9b;
+        }
+
+        /* Fitas K7 - DESIGN MELHORADO (mais realista) */
+        .tape-cassette {
+            width: 100%;
+            height: 85px;
+            border-radius: 12px 12px 8px 8px;
+            position: relative;
+            margin-bottom: 10px;
+            box-shadow: 0 6px 10px rgba(0,0,0,0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            padding-top: 12px;
+            border-bottom: 3px solid rgba(0,0,0,0.3);
+        }
+
+        /* Janela da fita (visor) */
+        .tape-cassette::before {
+            content: '';
+            position: absolute;
+            width: 40px;
+            height: 30px;
+            background: rgba(0,0,0,0.5);
+            border-radius: 6px;
+            top: 35px;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 2px solid rgba(255,255,255,0.1);
+            box-shadow: inset 0 0 5px #000;
+        }
+
+        /* Rolo esquerdo (pequeno) */
+        .tape-cassette::after {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #333;
+            border-radius: 50%;
+            top: 42px;
+            left: 25%;
+            transform: translateX(-50%);
+            border: 2px solid #666;
+            box-shadow: inset 0 0 3px #000;
+        }
+
+        /* Rolo direito (pequeno) */
+        .tape-roller-right {
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            background: #333;
+            border-radius: 50%;
+            top: 42px;
+            right: 25%;
+            transform: translateX(50%);
+            border: 2px solid #666;
+            box-shadow: inset 0 0 3px #000;
+            z-index: 2;
+        }
+
+        /* Etiqueta da fita (nome) */
+        .tape-label {
+            font-size: 8px;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 3px 6px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
+            width: 90%;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            margin-top: 5px;
+            z-index: 3;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        /* Cores das fitas */
+        .tape-white {
+            background: linear-gradient(145deg, #f5f5f5, #dddddd);
+            border: 1px solid #aaa;
+            color: #333;
+        }
+        .tape-white .tape-label {
+            background: rgba(0,0,0,0.2);
+            color: #000;
+        }
+
+        .tape-black {
+            background: linear-gradient(145deg, #3a3a3a, #1a1a1a);
+            border: 1px solid #666;
+            color: #fff;
+        }
+        .tape-black .tape-label {
+            background: rgba(255,255,255,0.2);
+            color: #9bff9b;
+        }
+
+        .tape-clear {
+            background: linear-gradient(145deg, rgba(220,220,220,0.3), rgba(180,180,180,0.2));
+            border: 1px solid #aaa;
+            backdrop-filter: blur(2px);
+            color: #b89a7a;
+        }
+        .tape-clear .tape-label {
+            background: rgba(0,0,0,0.3);
+            color: #b89a7a;
+        }
+
+        .tape-modal-close {
+            display: flex;
+            justify-content: center;
+        }
+
+        .tape-modal-btn {
+            background: #2a4a2a;
+            color: #9bff9b;
+            border: 1px solid #6a9b6a;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .tape-modal-btn:hover {
+            background: #3a5a3a;
+            box-shadow: 0 0 15px #9bff9b;
+        }
+
+        /* Modal de Senha */
+        .password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 2500;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .password-content {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border: 3px solid #b89a7a;
+            border-radius: 20px;
+            padding: 25px;
+            width: 100%;
+            max-width: 320px;
+            box-shadow: 0 0 30px #b89a7a;
+        }
+
+        .password-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .password-header h2 {
+            color: #b89a7a;
+            font-size: 18px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .password-body p {
+            color: #888;
+            font-size: 12px;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .password-body input {
+            width: 100%;
+            padding: 12px;
+            background: #1a1a1a;
+            border: 2px solid #3a3a3a;
+            border-radius: 8px;
+            color: #9bff9b;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 14px;
+            text-align: center;
+            margin-bottom: 10px;
+        }
+
+        .password-body input:focus {
+            outline: none;
+            border-color: #b89a7a;
+            box-shadow: 0 0 10px #b89a7a;
+        }
+
+        .password-error {
+            color: #ff6a6a;
+            font-size: 11px;
+            text-align: center;
+            display: none;
+            margin-top: 5px;
+        }
+
+        .password-footer {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .password-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .password-btn.enter {
+            background: #2a4a2a;
+            color: #9bff9b;
+            border: 1px solid #6a9b6a;
+        }
+
+        .password-btn.enter:hover {
+            background: #3a5a3a;
+            box-shadow: 0 0 15px #9bff9b;
+        }
+
+        .password-btn.cancel {
+            background: #4a2a2a;
+            color: #ff9b9b;
+            border: 1px solid #ff6a6a;
+        }
+
+        .password-btn.cancel:hover {
+            background: #5a3a3a;
+            box-shadow: 0 0 15px #ff9b9b;
+        }
+
+        /* Modal Admin */
+        .admin-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .admin-content {
+            background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+            border: 3px solid #9bff9b;
+            border-radius: 20px;
+            padding: 20px;
+            width: 100%;
+            max-width: 400px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px #9bff9b;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3a3a3a;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+
+        .admin-header h2 {
+            color: #9bff9b;
+            font-size: 16px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .admin-close {
+            background: none;
+            border: none;
+            color: #b89a7a;
+            font-size: 20px;
+            cursor: pointer;
+            padding: 5px;
+        }
+
+        .admin-close:hover {
+            color: #ff9b9b;
+        }
+
+        .admin-tapes-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .admin-tape-item {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #3a3a3a;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .admin-tape-item label {
+            display: block;
+            color: #b89a7a;
+            font-size: 11px;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .admin-tape-item input {
+            width: 100%;
+            padding: 8px 10px;
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 5px;
+            color: #9bff9b;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            margin-bottom: 10px;
+        }
+
+        .admin-tape-item input:focus {
+            outline: none;
+            border-color: #9bff9b;
+            box-shadow: 0 0 10px #9bff9b;
+        }
+
+        .admin-tape-color {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .admin-tape-color select {
+            flex: 1;
+            padding: 8px;
+            background: #1a1a1a;
+            border: 1px solid #3a3a3a;
+            border-radius: 5px;
+            color: #9bff9b;
+            font-family: 'Share Tech Mono', monospace;
+        }
+
+        .admin-footer {
+            display: flex;
+            gap: 10px;
+            border-top: 1px solid #3a3a3a;
+            padding-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .admin-btn {
+            flex: 1;
+            min-width: 120px;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 12px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        .admin-btn.save {
+            background: #2a4a2a;
+            color: #9bff9b;
+            border: 1px solid #6a9b6a;
+        }
+
+        .admin-btn.save:hover {
+            background: #3a5a3a;
+            box-shadow: 0 0 15px #9bff9b;
+        }
+
+        .admin-btn.download {
+            background: #4a2a4a;
+            color: #ff9bff;
+            border: 1px solid #ff6aff;
+        }
+
+        .admin-btn.download:hover {
+            background: #5a3a5a;
+            box-shadow: 0 0 15px #ff9bff;
+        }
+
+        .admin-btn.cancel {
+            background: #4a2a2a;
+            color: #ff9b9b;
+            border: 1px solid #ff6a6a;
+        }
+
+        .admin-btn.cancel:hover {
+            background: #5a3a3a;
+            box-shadow: 0 0 15px #ff9b9b;
+        }
+
+        .loading-indicator {
+            position: fixed;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1a1a1a;
+            color: #9bff9b;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 10px;
+            border: 1px solid #3a3a3a;
+            display: none;
+            z-index: 100;
+            box-shadow: 0 0 15px #9bff9b;
+        }
+
+        .status-message {
+            text-align: center;
+            font-size: 9px;
+            color: #b89a7a;
+            margin: 2px 12px 4px;
+            padding: 2px;
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="app-container" class="vinyl-bg">
+        <!-- Loading Indicator -->
+        <div class="loading-indicator" id="loadingIndicator">CONECTANDO...</div>
+
+        <!-- Header -->
+        <div class="app-header">
+            <h1>VU <span>MUSIC PLAYER</span></h1>
+            <div style="display: flex; gap: 10px; align-items: center;">
+                <button class="admin-gear" id="adminBtn" title="Configurar Fitinhas">⚙️</button>
+                <div class="credit">by <a href="#" target="_blank">gerlem.dev</a></div>
+            </div>
+        </div>
+
+        <!-- Cassette Display -->
+        <div class="cassette-display">
+            <div class="tape-window relative">
+                <!-- Fita conectando os rolos pelo topo -->
+                <div class="tape-path" id="tapePath"></div>
+                
+                <!-- Left Reel -->
+                <div class="reel reel-left" id="reelLeft">
+                    <div class="reel-inner">
+                        <div class="reel-center"></div>
+                        <div class="reel-spokes"></div>
+                    </div>
+                </div>
+                
+                <!-- Counter -->
+                <div class="flex items-center z-20">
+                    <div class="tape-counter" id="tapeCounter">0000</div>
+                </div>
+                
+                <!-- Right Reel -->
+                <div class="reel reel-right" id="reelRight">
+                    <div class="reel-inner">
+                        <div class="reel-center"></div>
+                        <div class="reel-spokes"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Track Info -->
+            <div class="track-info">
+                <span id="stationName">JAZZ GROOVE</span>
+                <span id="playIndicator">⏹ STOP</span>
+            </div>
+        </div>
+
+        <!-- VU Meter com LEDs -->
+        <div class="vu-container">
+            <div class="vu-channel">
+                <div class="vu-label">L</div>
+                <div class="vu-led-row" id="vuLeftRow"></div>
+            </div>
+            <div class="vu-channel">
+                <div class="vu-label">R</div>
+                <div class="vu-led-row" id="vuRightRow"></div>
+            </div>
+        </div>
+
+        <!-- Potenciômetro de Volume Analógico -->
+        <div class="volume-container">
+            <div class="volume-label">
+                <span>VOLUME</span>
+                <span id="volumeValue">5</span>
+            </div>
+            <div class="volume-slider" id="volumeSlider">
+                <div class="volume-fill" id="volumeFill" style="width: 50%;"></div>
+                <div class="volume-knob" id="volumeKnob" style="left: 50%;"></div>
+            </div>
+            <div class="volume-scale">
+                <span>0</span><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span><span>6</span><span>7</span><span>8</span><span>9</span><span>10</span>
+            </div>
+        </div>
+
+        <!-- Cassette Buttons -->
+        <div class="cassette-buttons">
+            <button class="cassette-btn eject" id="ejectBtn" title="Eject"></button>
+            <button class="cassette-btn stop" id="stopBtn" title="Stop"></button>
+            <button class="cassette-btn play" id="playBtn" title="Play"></button>
+            <button class="cassette-btn pause" id="pauseBtn" title="Pause"></button>
+        </div>
+
+        <!-- LED Footer -->
+        <div class="led-footer">
+            <div class="led-item">
+                <div class="led-vintage" id="ledStandby"></div>
+                <span class="led-label" id="labelStandby">STANDBY</span>
+            </div>
+            <div class="led-item">
+                <div class="led-vintage" id="ledOnAir"></div>
+                <span class="led-label" id="labelOnAir">ON AIR</span>
+            </div>
+        </div>
+
+        <!-- Status Message -->
+        <div class="status-message" id="statusMessage"></div>
+    </div>
+
+    <!-- Modal de Fitinhas K7 -->
+    <div class="tape-modal" id="tapeModal">
+        <div class="tape-modal-content">
+            <div class="tape-modal-title">ESCOLHA SUA FITA K7</div>
+            
+            <div class="tapes-grid" id="tapesGrid">
+                <!-- As 6 fitas serão inseridas via JavaScript -->
+            </div>
+            
+            <div class="tape-modal-close">
+                <button class="tape-modal-btn" id="closeTapeModal">TROCAR FITA K7</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Senha -->
+    <div class="password-modal" id="passwordModal">
+        <div class="password-content">
+            <div class="password-header">
+                <h2>🔒 ÁREA RESTRITA</h2>
+            </div>
+            
+            <div class="password-body">
+                <p>Digite a senha para configurar as fitas:</p>
+                <input type="password" id="adminPassword" placeholder="••••••" maxlength="20">
+                <div class="password-error" id="passwordError">Senha incorreta!</div>
+            </div>
+            
+            <div class="password-footer">
+                <button class="password-btn enter" id="enterAdminBtn">ENTRAR</button>
+                <button class="password-btn cancel" id="cancelPasswordBtn">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Admin -->
+    <div class="admin-modal" id="adminModal">
+        <div class="admin-content">
+            <div class="admin-header">
+                <h2>⚙️ CONFIGURAR FITAS K7</h2>
+                <button class="admin-close" id="closeAdminBtn">✕</button>
+            </div>
+            
+            <div class="admin-tapes-list" id="adminTapesList">
+                <!-- As 6 fitas serão inseridas via JS -->
+            </div>
+            
+            <div class="admin-footer">
+                <button class="admin-btn save" id="saveAdminBtn">💾 SALVAR</button>
+                <button class="admin-btn download" id="downloadHTMLBtn">📥 GERAR NOVO HTML</button>
+                <button class="admin-btn cancel" id="cancelAdminBtn">CANCELAR</button>
+            </div>
+        </div>
+    </div>
+
+    <audio id="audioElement" crossorigin="anonymous" preload="none"></audio>
+
+    <script>
+        (function() {
+            const audio = document.getElementById('audioElement');
+            const reelLeft = document.getElementById('reelLeft');
+            const reelRight = document.getElementById('reelRight');
+            const tapePath = document.getElementById('tapePath');
+            const tapeCounter = document.getElementById('tapeCounter');
+            const playIndicator = document.getElementById('playIndicator');
+            const stationName = document.getElementById('stationName');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const statusMessage = document.getElementById('statusMessage');
+            
+            const ledStandby = document.getElementById('ledStandby');
+            const ledOnAir = document.getElementById('ledOnAir');
+            const labelStandby = document.getElementById('labelStandby');
+            const labelOnAir = document.getElementById('labelOnAir');
+            
+            const vuLeftRow = document.getElementById('vuLeftRow');
+            const vuRightRow = document.getElementById('vuRightRow');
+            
+            const volumeSlider = document.getElementById('volumeSlider');
+            const volumeFill = document.getElementById('volumeFill');
+            const volumeKnob = document.getElementById('volumeKnob');
+            const volumeValue = document.getElementById('volumeValue');
+            
+            const tapeModal = document.getElementById('tapeModal');
+            const tapesGrid = document.getElementById('tapesGrid');
+            const closeTapeModal = document.getElementById('closeTapeModal');
+            
+            // Novos elementos
+            const adminBtn = document.getElementById('adminBtn');
+            const passwordModal = document.getElementById('passwordModal');
+            const adminPassword = document.getElementById('adminPassword');
+            const passwordError = document.getElementById('passwordError');
+            const enterAdminBtn = document.getElementById('enterAdminBtn');
+            const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
+            const adminModal = document.getElementById('adminModal');
+            const adminTapesList = document.getElementById('adminTapesList');
+            const closeAdminBtn = document.getElementById('closeAdminBtn');
+            const saveAdminBtn = document.getElementById('saveAdminBtn');
+            const downloadHTMLBtn = document.getElementById('downloadHTMLBtn');
+            const cancelAdminBtn = document.getElementById('cancelAdminBtn');
+            
+            const playBtn = document.getElementById('playBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            const ejectBtn = document.getElementById('ejectBtn');
+            
+            // Senha definida (602190)
+            const ADMIN_PASSWORD = "602190";
+            
+            // Banco de fitas K7 com cores e links
+            let tapes = [
+                { name: "JAZZ SUAVE", color: "white", url: "http://64.95.243.43:8002/stream" },
+                { name: "BALADAS JAZZ", color: "black", url: "https://ella.do-not-publish.com/ella-jazz-ballads" },
+                { name: "NOVA ORLEANS", color: "clear", url: "https://jazz-wr03.ice.infomaniak.ch/jazz-wr03-128.mp3" },
+                { name: "BOSSA NOVA", color: "white", url: "https://strm112.1.fm/bossanova_mobile_mp3" },
+                { name: "BIG BAND", color: "black", url: "http://ella.do-not-publish.com/ella-swing-and-bigband" },
+                { name: "VOCAL MODERNO", color: "clear", url: "https://ella.do-not-publish.com/ella-modern-vocal-jazz" }
+            ];
+            
+            let currentStreamUrl = tapes[0].url;
+            let isPlaying = false;
+            let isPaused = false;
+            let counter = 0;
+            let activeButton = null;
+            let animationFrame = null;
+            let useSimulation = false;
+            let selectedTapeIndex = 0;
+            
+            const LED_COUNT = 24;
+            
+            // Criar LEDs do VU
+            function createLEDs() {
+                for (let i = 0; i < LED_COUNT; i++) {
+                    let ledL = document.createElement('div');
+                    ledL.className = 'vu-led';
+                    if (i < 16) ledL.classList.add('green');
+                    else if (i < 20) ledL.classList.add('yellow');
+                    else ledL.classList.add('red');
+                    vuLeftRow.appendChild(ledL);
+                    
+                    let ledR = document.createElement('div');
+                    ledR.className = 'vu-led';
+                    if (i < 16) ledR.classList.add('green');
+                    else if (i < 20) ledR.classList.add('yellow');
+                    else ledR.classList.add('red');
+                    vuRightRow.appendChild(ledR);
+                }
+            }
+            createLEDs();
+            
+            const leftLEDs = vuLeftRow.children;
+            const rightLEDs = vuRightRow.children;
+            
+            // Criar as fitas no modal de seleção
+            function createTapes() {
+                tapesGrid.innerHTML = '';
+                tapes.forEach((tape, index) => {
+                    const tapeItem = document.createElement('div');
+                    tapeItem.className = 'tape-item';
+                    if (index === selectedTapeIndex) tapeItem.classList.add('selected');
+                    
+                    let colorClass = '';
+                    if (tape.color === 'white') colorClass = 'tape-white';
+                    else if (tape.color === 'black') colorClass = 'tape-black';
+                    else if (tape.color === 'clear') colorClass = 'tape-clear';
+                    
+                    tapeItem.innerHTML = `
+                        <div class="tape-cassette ${colorClass}">
+                            <div class="tape-label">${tape.name}</div>
+                            <div class="tape-roller-right"></div>
+                        </div>
+                    `;
+                    
+                    tapeItem.addEventListener('click', () => {
+                        document.querySelectorAll('.tape-item').forEach(item => {
+                            item.classList.remove('selected');
+                        });
+                        tapeItem.classList.add('selected');
+                        selectedTapeIndex = index;
+                        currentStreamUrl = tape.url;
+                        stationName.textContent = tape.name;
+                    });
+                    
+                    tapesGrid.appendChild(tapeItem);
+                });
+            }
+            createTapes();
+            
+            // Criar fitas no admin
+            function createAdminTapes() {
+                adminTapesList.innerHTML = '';
+                tapes.forEach((tape, index) => {
+                    const item = document.createElement('div');
+                    item.className = 'admin-tape-item';
+                    item.innerHTML = `
+                        <label>FITA ${index + 1} - NOME</label>
+                        <input type="text" class="tape-name-input" data-index="${index}" value="${tape.name}">
+                        
+                        <label>URL DO STREAM</label>
+                        <input type="text" class="tape-url-input" data-index="${index}" value="${tape.url}">
+                        
+                        <div class="admin-tape-color">
+                            <label>COR</label>
+                            <select class="tape-color-select" data-index="${index}">
+                                <option value="white" ${tape.color === 'white' ? 'selected' : ''}>Branca</option>
+                                <option value="black" ${tape.color === 'black' ? 'selected' : ''}>Preta</option>
+                                <option value="clear" ${tape.color === 'clear' ? 'selected' : ''}>Transparente</option>
+                            </select>
+                        </div>
+                    `;
+                    adminTapesList.appendChild(item);
+                });
+            }
+            
+            // Coletar dados do admin
+            function collectTapesFromAdmin() {
+                const newTapes = [];
+                const nameInputs = document.querySelectorAll('.tape-name-input');
+                const urlInputs = document.querySelectorAll('.tape-url-input');
+                const colorSelects = document.querySelectorAll('.tape-color-select');
+                
+                for (let i = 0; i < 6; i++) {
+                    newTapes.push({
+                        name: nameInputs[i].value,
+                        url: urlInputs[i].value,
+                        color: colorSelects[i].value
+                    });
+                }
+                
+                return newTapes;
+            }
+            
+            // Atualizar tudo com novas fitas
+            function updateTapes(newTapes) {
+                tapes = newTapes;
+                currentStreamUrl = tapes[selectedTapeIndex].url;
+                stationName.textContent = tapes[selectedTapeIndex].name;
+                createTapes();
+            }
+            
+            // Gerar novo HTML
+            function generateNewHTML() {
+                const newTapes = collectTapesFromAdmin();
+                
+                // Pega o HTML atual
+                const currentHTML = document.documentElement.outerHTML;
+                
+                // Converte o array para string no formato JS
+                const tapesString = JSON.stringify(newTapes, null, 4)
+                    .replace(/"([^"]+)":/g, '$1:') // Remove aspas das chaves
+                    .replace(/"/g, "'"); // Aspas simples nos valores
+                
+                // Substitui o array tapes no código
+                const newHTML = currentHTML.replace(
+                    /let tapes = \[[\s\S]*?\];/,
+                    `let tapes = ${tapesString};`
+                );
+                
+                // Download
+                const blob = new Blob([newHTML], { type: 'text/html' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `vu-player-${new Date().toISOString().slice(0,10)}.html`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                statusMessage.textContent = '✅ Novo HTML gerado! Verifique downloads.';
+                setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+            }
+            
+            function setVolume(percent) {
+                let vol = Math.max(0, Math.min(1, percent / 100));
+                audio.volume = vol;
+                volumeValue.textContent = Math.round(vol * 10);
+                volumeFill.style.width = (vol * 100) + '%';
+                volumeKnob.style.left = (vol * 100) + '%';
+            }
+            
+            volumeSlider.addEventListener('click', (e) => {
+                const rect = volumeSlider.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                setVolume((x / rect.width) * 100);
+            });
+            
+            volumeSlider.addEventListener('mousemove', (e) => {
+                if (e.buttons === 1) {
+                    const rect = volumeSlider.getBoundingClientRect();
+                    const x = e.clientX - rect.left;
+                    setVolume(Math.max(0, Math.min(100, (x / rect.width) * 100)));
+                }
+            });
+            
+            volumeSlider.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                const rect = volumeSlider.getBoundingClientRect();
+                const touch = e.touches[0];
+                const x = touch.clientX - rect.left;
+                setVolume(Math.max(0, Math.min(100, (x / rect.width) * 100)));
+            });
+            
+            volumeSlider.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                const rect = volumeSlider.getBoundingClientRect();
+                const touch = e.touches[0];
+                const x = touch.clientX - rect.left;
+                setVolume(Math.max(0, Math.min(100, (x / rect.width) * 100)));
+            });
+            
+            function resetButtons() {
+                document.querySelectorAll('.cassette-btn').forEach(btn => {
+                    btn.classList.remove('pressed', 'active');
+                });
+            }
+            
+            function pressButton(button) {
+                resetButtons();
+                button.classList.add('pressed', 'active');
+                activeButton = button;
+                setTimeout(() => {
+                    if (activeButton === button) {
+                        button.classList.remove('pressed');
+                    }
+                }, 200);
+            }
+            
+            function updateLEDs(state) {
+                if (state === 'playing' || state === 'paused') {
+                    ledStandby.className = 'led-vintage';
+                    ledOnAir.className = 'led-vintage green';
+                    labelStandby.classList.remove('active');
+                    labelOnAir.classList.add('active');
+                } else {
+                    ledStandby.className = 'led-vintage red';
+                    ledOnAir.className = 'led-vintage';
+                    labelStandby.classList.add('active');
+                    labelOnAir.classList.remove('active');
+                }
+            }
+            
+            function stopAll() {
+                audio.pause();
+                audio.src = '';
+                audio.load();
+                isPlaying = false;
+                isPaused = false;
+                useSimulation = false;
+                reelLeft.classList.remove('spinning');
+                reelRight.classList.remove('spinning');
+                tapePath.style.opacity = '0.3';
+                playIndicator.textContent = '⏹ STOP';
+                updateLEDs('standby');
+                for (let i = 0; i < LED_COUNT; i++) {
+                    leftLEDs[i].classList.remove('active');
+                    rightLEDs[i].classList.remove('active');
+                }
+                if (window.audioCtx) {
+                    window.audioCtx.suspend();
+                }
+            }
+            
+            function simulateVUMeter() {
+                if (!useSimulation || isPaused) {
+                    for (let i = 0; i < LED_COUNT; i++) {
+                        leftLEDs[i].classList.remove('active');
+                        rightLEDs[i].classList.remove('active');
+                    }
+                    animationFrame = requestAnimationFrame(simulateVUMeter);
+                    return;
+                }
+                
+                let leftLevel = Math.floor(Math.random() * LED_COUNT);
+                let rightLevel = Math.floor(Math.random() * LED_COUNT);
+                
+                for (let i = 0; i < LED_COUNT; i++) {
+                    if (i < leftLevel) leftLEDs[i].classList.add('active');
+                    else leftLEDs[i].classList.remove('active');
+                    
+                    if (i < rightLevel) rightLEDs[i].classList.add('active');
+                    else rightLEDs[i].classList.remove('active');
+                }
+                
+                counter++;
+                tapeCounter.textContent = counter.toString().padStart(4, '0');
+                
+                animationFrame = requestAnimationFrame(simulateVUMeter);
+            }
+            
+            async function playStream(url) {
+                try {
+                    loadingIndicator.style.display = 'block';
+                    statusMessage.textContent = 'Conectando...';
+                    
+                    audio.src = url;
+                    audio.load();
+                    
+                    const playPromise = audio.play();
+                    const timeoutPromise = new Promise((_, reject) => 
+                        setTimeout(() => reject(new Error('Timeout')), 10000)
+                    );
+                    
+                    await Promise.race([playPromise, timeoutPromise]);
+                    
+                    if (!window.audioCtx) {
+                        window.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                        window.source = window.audioCtx.createMediaElementSource(audio);
+                        window.analyser = window.audioCtx.createAnalyser();
+                        window.analyser.fftSize = 256;
+                        window.analyser.smoothingTimeConstant = 0.8;
+                        window.source.connect(window.analyser);
+                        window.analyser.connect(window.audioCtx.destination);
+                        window.dataArray = new Uint8Array(window.analyser.frequencyBinCount);
+                    } else if (window.audioCtx.state === 'suspended') {
+                        await window.audioCtx.resume();
+                    }
+                    
+                    useSimulation = false;
+                    isPlaying = true;
+                    isPaused = false;
+                    
+                    playIndicator.textContent = '▶ PLAY';
+                    reelLeft.classList.add('spinning');
+                    reelRight.classList.add('spinning');
+                    tapePath.style.opacity = '1';
+                    loadingIndicator.style.display = 'none';
+                    statusMessage.textContent = '';
+                    updateLEDs('playing');
+                    
+                    function renderRealVU() {
+                        if (!isPlaying || isPaused || useSimulation) {
+                            for (let i = 0; i < LED_COUNT; i++) {
+                                leftLEDs[i].classList.remove('active');
+                                rightLEDs[i].classList.remove('active');
+                            }
+                            animationFrame = requestAnimationFrame(renderRealVU);
+                            return;
+                        }
+                        
+                        try {
+                            window.analyser.getByteFrequencyData(window.dataArray);
+                            
+                            let leftAvg = 0;
+                            for (let i = 0; i < 10; i++) leftAvg += window.dataArray[i];
+                            leftAvg = leftAvg / 10;
+                            let leftLevel = Math.floor((leftAvg / 255) * LED_COUNT);
+                            
+                            let rightAvg = 0;
+                            for (let i = 10; i < 20; i++) rightAvg += window.dataArray[i];
+                            rightAvg = rightAvg / 10;
+                            let rightLevel = Math.floor((rightAvg / 255) * LED_COUNT);
+                            
+                            for (let i = 0; i < LED_COUNT; i++) {
+                                if (i < leftLevel) leftLEDs[i].classList.add('active');
+                                else leftLEDs[i].classList.remove('active');
+                                
+                                if (i < rightLevel) rightLEDs[i].classList.add('active');
+                                else rightLEDs[i].classList.remove('active');
+                            }
+                            
+                            counter++;
+                            tapeCounter.textContent = counter.toString().padStart(4, '0');
+                            
+                        } catch (error) {
+                            console.error('VU error:', error);
+                        }
+                        
+                        animationFrame = requestAnimationFrame(renderRealVU);
+                    }
+                    
+                    if (animationFrame) cancelAnimationFrame(animationFrame);
+                    animationFrame = requestAnimationFrame(renderRealVU);
+                    
+                } catch (error) {
+                    console.error('Stream error:', error);
+                    loadingIndicator.style.display = 'none';
+                    statusMessage.textContent = 'Erro ao conectar. Tente outra fita.';
+                }
+            }
+            
+            playBtn.addEventListener('click', () => {
+                pressButton(playBtn);
+                
+                if (tapeModal.style.display === 'flex' || adminModal.style.display === 'flex' || passwordModal.style.display === 'flex') {
+                    return;
+                }
+                
+                if (!isPlaying) {
+                    playStream(currentStreamUrl);
+                } else if (isPaused) {
+                    audio.play()
+                        .then(() => {
+                            isPaused = false;
+                            playIndicator.textContent = '▶ PLAY';
+                            reelLeft.classList.add('spinning');
+                            reelRight.classList.add('spinning');
+                            tapePath.style.opacity = '1';
+                            updateLEDs('playing');
+                            if (window.audioCtx && window.audioCtx.state === 'suspended') {
+                                window.audioCtx.resume();
+                            }
+                        })
+                        .catch(err => {
+                            console.error('Erro ao resumir:', err);
+                            playStream(currentStreamUrl);
+                        });
+                }
+            });
+            
+            pauseBtn.addEventListener('click', () => {
+                pressButton(pauseBtn);
+                if (isPlaying && !isPaused) {
+                    audio.pause();
+                    isPaused = true;
+                    playIndicator.textContent = '⏸ PAUSE';
+                    reelLeft.classList.remove('spinning');
+                    reelRight.classList.remove('spinning');
+                    tapePath.style.opacity = '0.5';
+                    updateLEDs('paused');
+                    if (window.audioCtx) {
+                        window.audioCtx.suspend();
+                    }
+                }
+            });
+            
+            stopBtn.addEventListener('click', () => {
+                pressButton(stopBtn);
+                stopAll();
+                counter = 0;
+                tapeCounter.textContent = '0000';
+            });
+            
+            ejectBtn.addEventListener('click', () => {
+                pressButton(ejectBtn);
+                
+                if (isPlaying || isPaused) {
+                    stopAll();
+                    counter = 0;
+                    tapeCounter.textContent = '0000';
+                }
+                
+                tapeModal.style.display = 'flex';
+                playIndicator.textContent = '⏏ EJECT';
+                stationName.textContent = 'ESCOLHA FITA';
+                tapePath.style.opacity = '0.2';
+                for (let i = 0; i < LED_COUNT; i++) {
+                    leftLEDs[i].classList.remove('active');
+                    rightLEDs[i].classList.remove('active');
+                }
+            });
+            
+            closeTapeModal.addEventListener('click', () => {
+                tapeModal.style.display = 'none';
+                stationName.textContent = tapes[selectedTapeIndex].name;
+            });
+            
+            tapeModal.addEventListener('click', (e) => {
+                if (e.target === tapeModal) {
+                    tapeModal.style.display = 'none';
+                    stationName.textContent = tapes[selectedTapeIndex].name;
+                }
+            });
+            
+            // Eventos do Admin com senha
+            adminBtn.addEventListener('click', () => {
+                adminPassword.value = '';
+                passwordError.style.display = 'none';
+                passwordModal.style.display = 'flex';
+            });
+            
+            enterAdminBtn.addEventListener('click', () => {
+                if (adminPassword.value === ADMIN_PASSWORD) {
+                    passwordModal.style.display = 'none';
+                    createAdminTapes();
+                    adminModal.style.display = 'flex';
+                } else {
+                    passwordError.style.display = 'block';
+                    adminPassword.value = '';
+                    adminPassword.focus();
+                }
+            });
+            
+            cancelPasswordBtn.addEventListener('click', () => {
+                passwordModal.style.display = 'none';
+            });
+            
+            adminPassword.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    enterAdminBtn.click();
+                }
+            });
+            
+            closeAdminBtn.addEventListener('click', () => {
+                adminModal.style.display = 'none';
+            });
+            
+            cancelAdminBtn.addEventListener('click', () => {
+                adminModal.style.display = 'none';
+            });
+            
+            saveAdminBtn.addEventListener('click', () => {
+                const newTapes = collectTapesFromAdmin();
+                updateTapes(newTapes);
+                adminModal.style.display = 'none';
+                statusMessage.textContent = '✅ Fitinhas atualizadas com sucesso!';
+                setTimeout(() => { statusMessage.textContent = ''; }, 3000);
+            });
+            
+            downloadHTMLBtn.addEventListener('click', () => {
+                generateNewHTML();
+                adminModal.style.display = 'none';
+            });
+            
+            adminModal.addEventListener('click', (e) => {
+                if (e.target === adminModal) {
+                    adminModal.style.display = 'none';
+                }
+            });
+            
+            passwordModal.addEventListener('click', (e) => {
+                if (e.target === passwordModal) {
+                    passwordModal.style.display = 'none';
+                }
+            });
+            
+            audio.addEventListener('error', (e) => {
+                console.error('Audio error:', e);
+                if (isPlaying && !useSimulation) {
+                    statusMessage.textContent = 'Erro no stream. Tente outra fita.';
+                }
+            });
+            
+            audio.addEventListener('waiting', () => {
+                loadingIndicator.style.display = 'block';
+                loadingIndicator.textContent = 'BUFFERING...';
+            });
+            
+            audio.addEventListener('canplay', () => {
+                loadingIndicator.style.display = 'none';
+            });
+            
+            audio.addEventListener('playing', () => {
+                loadingIndicator.style.display = 'none';
+                statusMessage.textContent = '';
+            });
+            
+            window.addEventListener('beforeunload', () => {
+                if (animationFrame) cancelAnimationFrame(animationFrame);
+            });
+            
+            // Inicialização
+            setVolume(50);
+            updateLEDs('standby');
+            stationName.textContent = tapes[0].name;
+            statusMessage.textContent = 'Pronto. Insira uma fita.';
+        })();
+    </script>
+</body>
+</html>
